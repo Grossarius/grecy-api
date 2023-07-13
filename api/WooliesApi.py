@@ -615,10 +615,6 @@ def get_product_api():
     # Return the JSON response object
     return jsonify(response)
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
 # recipe = """
 # 5 tbsp oil
 # 2 eggs lightly beaten
