@@ -1,14 +1,8 @@
 {
-    "build":[
+    "rewrites":[
         {
-            "src":"api/WooliesApi.py",
-            "use":"@vercel/python"
-        }
-    ],
-    "routes":[
-        {
-            "src":"/(.*)",
-            "dest":"api/WooliesApi.py"
+            "source":"/(.*)",
+            "destination":"api/WooliesApi"
         }
     ]
 }
