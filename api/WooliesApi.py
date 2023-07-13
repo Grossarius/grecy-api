@@ -407,9 +407,11 @@ def get_all_product(
     data: str, top=5, bad_list: List[str] = []
 ) -> Tuple[Dict[str, List[Dict[str, any]]], List[Dict[str, any]], Dict[str, List[str]]]:
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(base_dir, "data")
-    print(data_dir)
+    # base_dir = os.path.split(base_dir)[0]
+    data_dir = os.path.join(base_dir, '..', 'data')
 
+    print(data_dir)
+    
     all_none = {}
     all_res = defaultdict(list)
     buy_list = []
@@ -611,6 +613,10 @@ def get_product_api():
 
     # Return the JSON response object
     return jsonify(response)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
 
 # recipe = """
 # 5 tbsp oil
