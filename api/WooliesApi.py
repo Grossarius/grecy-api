@@ -20,7 +20,7 @@ GPT_MODEL = "gpt-3.5-turbo"
 openai.api_key = os.getenv("OPENAI_API_KEY")
 p = inflect.engine()
 app = Flask(__name__)
-
+CORS(app)
 
 # ChatGPT setup to return JSON formatted data
 def json_gpt(input: str) -> Dict:
