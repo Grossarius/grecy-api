@@ -584,7 +584,6 @@ def get_all_product(
 
 @app.route("/get_product", methods=["POST"])
 def get_product_api():
-    print(os.environ.get('OPENAI_API_KEY'))
     data = request.get_json()["requestBody"]
     prompt = data.get("prompt")
     filter = data.get("filter")
