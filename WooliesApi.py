@@ -108,57 +108,56 @@ def categorize_ingredients(recipe: str) -> Dict[str, List[str]]:
     category_list = [item for sublist in category_dict.values() for item in sublist]
 
     # One call: Faster but sometimes it misses some ingredients
-    # # ChatGPT to help categorize items
+    # ChatGPT to help categorize items
+    QUERIES_INPUT = f"""
+        Get all the ingredients in the recipe.
+
+        Recipe: {recipe}
+
+        Only include ingredients that are in the recipe, without the measurements.
+
+        Then, group the ingredients into the provided categories below.
+        Use ONLY the provided categories and items. Make sure to group all the items.
+
+        Categories:
+        {category_list}
+
+        Format:
+        "category_1": ["item_1", "item_2", ...],
+        "category_2": ["item_1", "item_2", ...],
+        ...
+    """
+
+    ingredients = json_gpt(QUERIES_INPUT)
+    # Two calls: One to get ingredients and one to categorize. Better results but slower + glitchy
     # QUERIES_INPUT = f"""
-    #     Get all the ingredients in the recipe.
+    # Get all the ingredients in the recipe.
+    # This is the recipe: {recipe}
+    # Only include ingredients that are in the recipe, don't include the measurements.
+    # Format: {{"Ingredients": ["ingredient_1", "ingredient_2",...]}}
+    # """
 
-    #     Recipe: {recipe}
+    # ingredients = json_gpt(QUERIES_INPUT)["Ingredients"]
+    # time.sleep(1)
 
-    #     Only include ingredients that are in the recipe, without the measurements.
+    # QUERIES_INPUT = f"""
 
-    #     Then, group the ingredients into the provided categories below.
-    #     Use ONLY the provided categories and items. Make sure to group all the items.
+    #     Group the items into their respective categories. Use ONLY the provided categories and items.
 
-    #     Categories:
-    #     {category_list}
+    #     Categories: {category_list}
+    #     Items: {ingredients}
+
+    #     Skip empty lists.
+    #     Make sure to group all the items.
 
     #     Format:
     #     "category_1": ["item_1", "item_2", ...],
     #     "category_2": ["item_1", "item_2", ...],
-    #     ...
-    # """
+    #     """
 
     # ingredients = json_gpt(QUERIES_INPUT)
-    # Two calls: One to get ingredients and one to categorize. Better results but slower + glitchy
-    QUERIES_INPUT = f"""
-    Get all the ingredients in the recipe. 
-    This is the recipe: {recipe}
-    Only include ingredients that are in the recipe, don't include the measurements.
-    Format: {{"Ingredients": ["ingredient_1", "ingredient_2",...]}}
-    """
-
-    ingredients = json_gpt(QUERIES_INPUT)["Ingredients"]
-    time.sleep(1)
-
-    QUERIES_INPUT = f"""
-
-        
-        Group the items into their respective categories. Use ONLY the provided categories and items.
-
-        Categories: {category_list}
-        Items: {ingredients}
-
-        Skip empty lists.
-        Make sure to group all the items.
-
-        Format: 
-        "category_1": ["item_1", "item_2", ...],
-        "category_2": ["item_1", "item_2", ...],
-        """
-
-    ingredients = json_gpt(QUERIES_INPUT)
-    # End of ChatGPT
-    print("Output from GPT: ", ingredients)
+    # # End of ChatGPT
+    # print("Output from GPT: ", ingredients)
     # Combine the known categories and the ones from ChatGPT
     # Merge the subcategories into the general categories
     categorized_items = {}
