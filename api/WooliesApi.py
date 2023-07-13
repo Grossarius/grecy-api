@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import openai
 import os
-from dotenv import load_dotenv
 import re
 import inflect
 from collections import defaultdict
@@ -14,10 +13,9 @@ from flask_cors import CORS
 
 
 # Setup
-load_dotenv()
 # GPT_MODEL = "gpt-4-0613"
 GPT_MODEL = "gpt-3.5-turbo"
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai.api_key = os.environ.get('OPENAI_API_KEY')
 p = inflect.engine()
 app = Flask(__name__)
 
