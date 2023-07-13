@@ -408,6 +408,7 @@ def get_all_product(
 ) -> Tuple[Dict[str, List[Dict[str, any]]], List[Dict[str, any]], Dict[str, List[str]]]:
     base_dir = os.path.dirname(os.path.abspath(__file__))
     data_dir = os.path.join(base_dir, "data")
+    print(data_dir)
 
     all_none = {}
     all_res = defaultdict(list)
