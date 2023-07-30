@@ -31,13 +31,10 @@ def json_gpt(input: str) -> Dict:
             {"role": "system", "content": "Output only valid JSON"},
             {"role": "user", "content": input},
         ],
-        temperature=0,
+        temperature=0.5,
     )
     text = completion.choices[0].message.content
-    # Sometimes ChatGPT leaves a comma at the end of the JSON so this removes it
-    extra_comma = text[-3]
-    if extra_comma == ",":
-        text = text[:-3] + "}"
+    print(text)
     parsed = json.loads(text)
     return parsed
 
@@ -114,9 +111,9 @@ def categorize_ingredients(recipe: str) -> Dict[str, List[str]]:
 
         Recipe: {recipe}
 
-        Only include ingredients that are in the recipe, without the measurements.
+        Only include ingredients that are in the recipe.
 
-        Then, group the ingredients into the provided categories below.
+        Then, group the ingredients into only one of the provided categories below. 
         Use ONLY the provided categories and items. Make sure to group all the items.
 
         Categories:
@@ -129,7 +126,7 @@ def categorize_ingredients(recipe: str) -> Dict[str, List[str]]:
     """
 
     ingredients = json_gpt(QUERIES_INPUT)
-    # Two calls: One to get ingredients and one to categorize. Better results but slower + glitchy
+    # # Two calls: One to get ingredients and one to categorize. Better results but slower + glitchy
     # QUERIES_INPUT = f"""
     # Get all the ingredients in the recipe.
     # This is the recipe: {recipe}
@@ -156,8 +153,8 @@ def categorize_ingredients(recipe: str) -> Dict[str, List[str]]:
     #     """
 
     # ingredients = json_gpt(QUERIES_INPUT)
-    # # End of ChatGPT
-    # print("Output from GPT: ", ingredients)
+    # End of ChatGPT
+    print("Output from GPT: ", ingredients)
     # Combine the known categories and the ones from ChatGPT
     # Merge the subcategories into the general categories
     categorized_items = {}
@@ -183,7 +180,29 @@ def categorize_ingredients(recipe: str) -> Dict[str, List[str]]:
 def find_product(
     product: str, df, k: str, filter_ingredient=True, bad_list: List[str] = []
 ) -> pd.DataFrame:
-    # Remove the words that are not needed
+    # Hard code: remove an ingredient from the bad list and add them back later (ex: Syrup is bad but Maple Syrup isn't)
+    add_list = []
+    if "maple syrup" in product:
+        add_list.append("Syrup")
+        bad_list.remove("Syrup")
+    # Hard code: renaming/removing/replacing words from the product's name
+    if "scallion" in product or "green onion" in product:
+        product = "spring onion"
+    if "ketchup" in product:
+        product = "tomato sauce"
+    if "ground" in product:
+        product = product.replace("ground", "mince")
+    if "minced" in product:
+        product = product.replace("minced", "mince")
+    if ("raising" in product and "flour" in product) or "self-raising" in product:
+        product = "raising flour"
+    if "cornflour" in product or "cornstarch" in product:
+        product = "cornflour"
+    if "all-purpose" in product and "flour" in product:
+        product = "plain flour"
+    if "lemon" in product:
+        product = "lemon"
+
     all_replace = [
         "parmesan",
         "cheddar",
@@ -216,7 +235,7 @@ def find_product(
         "whole",
         "boneless",
     ]
-    print("Product before processed: ", words_to_remove)
+    print("Product before processed: ", product)
     for word in words_to_remove:
         if word in product:
             product = product.replace(word, "")
@@ -225,11 +244,11 @@ def find_product(
     product = p.singular_noun(product.lower()) or product.lower()
     # Remove things in () (ex: "Soba Noodles (Buckwheat)" -> "Soba Noodles")
     product = re.sub(r"\([^)]*\)", "", product)
-    print("Product after processed: ", product)
     product = product.replace(",", "")
     product = product.strip()
 
-    words_to_pluralize = ["noodle", "egg", "seed", "berry", "oat"]
+    # Single word in the product name replacement
+    words_to_pluralize = ["noodle", "egg", "seed", "berry"]
     exit_loop = False
     for word in words_to_pluralize:
         if exit_loop:
@@ -240,29 +259,18 @@ def find_product(
                 exit_loop = True
                 break
 
-    # Hard code: remove an ingredient from the bad list and add them back later (ex: Syrup is bad but Maple Syrup isn't)
-    add_list = []
-    if "maple syrup" in product:
-        add_list.append("Syrup")
-        bad_list.remove("Syrup")
-    # Hard code: renaming/removing/replacing words from the product's name
-    if "scallion" in product or "green onion" in product:
-        product = "spring onion"
-    if "ketchup" in product:
-        product = "tomato sauce"
-    if "ground" in product:
-        product = product.replace("ground", "mince")
-    if "minced" in product:
-        product = product.replace("minced", "mince")
-    if ("raising" in product and "flour" in product) or "self-raising" in product:
-        product = "raising flour"
-    if "cornflour" in product or "cornstarch" in product:
-        product = "cornflour"
-    if ("all-purpose" in product or "all purpose" in product) and "flour" in product:
-        product = "plain flour"
-    if "lemon" in product:
-        product = "lemon"
+    # Exact product name replacement
+    words_to_pluralize = ["oat"]
+    exit_loop = False
+    for word in words_to_pluralize:
+        if exit_loop:
+            break
+        if word == product:
+            product = p.plural(product)
+            exit_loop = True
+            break
 
+    print("Product after processed: ", product)
     # Split the product name into words to look up in the database (ex: Some brands say Noodles Soba instead of Soba Noodles)
     product_split = product.split()
 
@@ -315,7 +323,8 @@ def find_product(
     print("Len of selected rows (before filtering): ", len(selected_rows))
 
     # Get the 'Product Name' and 'Ingredients' columns as Series
-    product_names = selected_rows["Product Name"]
+    # Swapped Product Name and Display Name
+    product_names = selected_rows["Display Name"]
     ingredients_series = selected_rows["Ingredients"]
     cup_prices = selected_rows["Cup Price"]
     price = selected_rows["Price"]
@@ -411,8 +420,8 @@ def get_all_product(
     data: str, top=5, bad_list: List[str] = []
 ) -> Tuple[Dict[str, List[Dict[str, any]]], List[Dict[str, any]], Dict[str, List[str]]]:
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(base_dir, "data")
-
+    data_dir = os.path.join(base_dir, "..", "data")
+    print(data_dir)
     all_none = {}
     all_res = defaultdict(list)
     buy_list = []
@@ -428,7 +437,7 @@ def get_all_product(
             "cheese",
             "yogurt",
             "cream",
-            "dips",
+            "dip",
             "butter",
             "egg",
         ],
@@ -471,6 +480,7 @@ def get_all_product(
             "sesame seed",
             "mirin",
             "peanut butter",
+            "oat",
         ],
         "poultry-meat-seafood": ["poultry", "meat", "seafood"],
     }
@@ -484,17 +494,25 @@ def get_all_product(
             if product2 in v:
                 known_product[k] = known_product.get(k, []) + [product]
                 # Iterate over the dictionary to find the item and delete
+                for i in known_product.values():
+                    print("oat" in i)
+                print("Before deletion: ", categorized_items)
+                # Iterate through all categories in known_product
+                for category_b, items_b in known_product.items():
+                    # Find common items and remove them from all categories in categorized_items
+                    for items_a in categorized_items.values():
+                        items_a[:] = [item for item in items_a if item not in items_b]
+
+                # Remove empty lists from dictionary categorized_items
                 categorized_items = {
-                    key: value
-                    for key, value in categorized_items.items()
-                    if value != product
+                    category: items
+                    for category, items in categorized_items.items()
+                    if items
                 }
-                print(product)
-                print("after: ", categorized_items)
-                for key, value in list(categorized_items.items()):
-                    if value == product:
-                        del categorized_items[key]
+                print("After deletion: ", categorized_items)
                 break
+
+    print("Final categorized item list: ", categorized_items)
     # Combine the known categories and the ones from ChatGPT
     categorized_items = {
         key: known_product.get(key, []) + categorized_items.get(key, [])
@@ -529,6 +547,7 @@ def get_all_product(
             df = pd.concat([df, df2], ignore_index=True)
         # Find product
         for product in v:
+            print("All products: ", v)
             original_product = product
             print("Product: ", product)
             print("Category: ", k)
@@ -570,6 +589,7 @@ def get_all_product(
                     }
                 )
             print(len(clean_products_df_sorted))
+            # Add to all_none if there's no products from the item
             if clean_products_df_sorted.empty:
                 all_none[k] = all_none.get(k, []) + [original_product]
         buy_list = []
@@ -600,6 +620,9 @@ def get_product_api():
     if not filter:
         prompt = data["allItems"]
         bad_list = []
+    # Replace \n with ","
+    prompt = str(prompt).replace("\n", ",")
+    print("Prompt: ", prompt)
     all_res, buy_list, all_none = get_all_product(
         data=prompt, top=top, bad_list=bad_list
     )
