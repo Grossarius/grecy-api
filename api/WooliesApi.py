@@ -3,7 +3,6 @@ import pandas as pd
 import json
 import openai
 import os
-from dotenv import load_dotenv
 import re
 import inflect
 from collections import defaultdict
@@ -14,15 +13,12 @@ from flask_cors import CORS
 
 
 # Setup
-load_dotenv()
 # GPT_MODEL = "gpt-4-0613"
 GPT_MODEL = "gpt-3.5-turbo"
 openai.api_key = os.getenv("OPENAI_API_KEY")
 p = inflect.engine()
 app = Flask(__name__)
 CORS(app)
-
-
 # ChatGPT setup to return JSON formatted data
 def json_gpt(input: str) -> Dict:
     completion = openai.ChatCompletion.create(
@@ -420,8 +416,16 @@ def get_all_product(
     data: str, top=5, bad_list: List[str] = []
 ) -> Tuple[Dict[str, List[Dict[str, any]]], List[Dict[str, any]], Dict[str, List[str]]]:
     base_dir = os.path.dirname(os.path.abspath(__file__))
+<<<<<<< HEAD:WooliesApi.py
     data_dir = os.path.join(base_dir, "..", "data")
     print(data_dir)
+=======
+    # base_dir = os.path.split(base_dir)[0]
+    data_dir = os.path.join(base_dir, '..', 'data')
+
+    print(data_dir)
+    
+>>>>>>> bba43fc53bb79e4f7dffa92c1fc3e3f7415a9169:api/WooliesApi.py
     all_none = {}
     all_res = defaultdict(list)
     buy_list = []
@@ -639,7 +643,7 @@ def get_product_api():
     return jsonify(response)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
 
 # recipe = """
