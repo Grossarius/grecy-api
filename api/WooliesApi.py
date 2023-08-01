@@ -19,6 +19,8 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 p = inflect.engine()
 app = Flask(__name__)
 CORS(app)
+
+
 # ChatGPT setup to return JSON formatted data
 def json_gpt(input: str) -> Dict:
     completion = openai.ChatCompletion.create(
@@ -210,31 +212,6 @@ def find_product(
     for i in all_replace:
         if i in product:
             product = i
-
-    words_to_remove = [
-        "skinless",
-        "fresh",
-        "dry",
-        "chopped",
-        "shred",
-        "shredded",
-        "diced",
-        "sliced",
-        "grated",
-        "cubed",
-        "julienne",
-        "pureed",
-        "mashed",
-        "leaves",
-        "crushed",
-        "sliced",
-        "whole",
-        "boneless",
-    ]
-    print("Product before processed: ", product)
-    for word in words_to_remove:
-        if word in product:
-            product = product.replace(word, "")
 
     # Default: make the product singular. So the items below will be pluralized
     product = p.singular_noun(product.lower()) or product.lower()
@@ -612,12 +589,37 @@ def get_product_api():
     if bad_list == [""]:
         bad_list = []
     print("Data: ", data)
+    # Enhacing prompt
     # Get the bad products that are not found
     if not filter:
         prompt = data["allItems"]
         bad_list = []
     # Replace \n with ","
-    prompt = str(prompt).replace("\n", ",")
+    prompt = str(prompt).replace("\n", ",").lower()
+    words_to_remove = [
+        "skinless",
+        "fresh",
+        "dry",
+        "chopped",
+        "shred",
+        "shredded",
+        "diced",
+        "sliced",
+        "grated",
+        "cubed",
+        "julienne",
+        "pureed",
+        "mashed",
+        "leaves",
+        "crushed",
+        "sliced",
+        "whole",
+        "boneless",
+        "mashed",
+    ]
+    for word in words_to_remove:
+        if word in prompt:
+            prompt = prompt.replace(word, "")
     print("Prompt: ", prompt)
     all_res, buy_list, all_none = get_all_product(
         data=prompt, top=top, bad_list=bad_list
@@ -635,7 +637,7 @@ def get_product_api():
     return jsonify(response)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True)
 
 # recipe = """
